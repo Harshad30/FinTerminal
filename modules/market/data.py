@@ -13,6 +13,23 @@ PERIOD_MAP = {
     "5Y": ("5y", "1wk"),
 }
 
+def search_tickers(query: str) -> list[dict]:
+    """Search for tickers by company name."""
+    try:
+        results = yf.Search(query, max_results=6)
+        quotes = results.quotes
+        return [
+            {
+                "symbol": q.get("symbol", ""),
+                "name": q.get("longname") or q.get("shortname", ""),
+                "exchange": q.get("exchange", ""),
+                "type": q.get("quoteType", ""),
+            }
+            for q in quotes
+            if q.get("symbol")
+        ]
+    except Exception:
+        return []
 
 def get_ticker_info(ticker: str) -> dict:
     """Fetch company info and key stats."""
@@ -26,7 +43,7 @@ def get_ticker_info(ticker: str) -> dict:
             "market_cap": info.get("marketCap", None),
             "pe_ratio": info.get("trailingPE", None),
             "eps": info.get("trailingEps", None),
-            "dividend_yield": info.get("dividendYield", None),
+            "dividend_yield": info.get("trailingAnnualDividendYield", None),
             "week_52_high": info.get("fiftyTwoWeekHigh", None),
             "week_52_low": info.get("fiftyTwoWeekLow", None),
             "avg_volume": info.get("averageVolume", None),

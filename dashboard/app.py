@@ -12,6 +12,15 @@ from modules.market.data import (
 )
 from modules.market.charts import build_price_chart
 
+from modules.market.data import (
+    get_ticker_info,
+    get_price_history,
+    add_moving_averages,
+    detect_golden_death_cross,
+    format_large_number,
+    search_tickers,
+)
+
 st.set_page_config(
     page_title="FinTerminal",
     page_icon="📈",
@@ -85,11 +94,36 @@ with st.sidebar:
     st.divider()
 
     st.markdown("### Search")
-    ticker = st.text_input(
-        "Ticker Symbol",
-        value="AAPL",
-        placeholder="e.g. AAPL, MSFT, TSLA",
-    ).upper().strip()
+    
+    search_query = st.text_input(
+        "Search by name or ticker",
+        placeholder="e.g. Apple, Tesla, MSFT",
+    )
+
+    ticker = ""
+
+    if search_query:
+        if len(search_query) <= 5 and search_query.isupper():
+            # looks like a direct ticker entry
+            ticker = search_query.strip()
+        else:
+            # search by name
+            with st.spinner("Searching..."):
+                results = search_tickers(search_query)
+            
+            if results:
+                options = {
+                    f"{r['symbol']} — {r['name']} ({r['exchange']})": r["symbol"]
+                    for r in results
+                    if r["type"] in ["EQUITY", "ETF", ""]
+                }
+                if options:
+                    selected = st.selectbox("Select company", list(options.keys()))
+                    ticker = options[selected]
+                else:
+                    st.warning("No equity results found.")
+            else:
+                st.warning("No results found. Try a different name.")
 
     period = st.radio(
         "Time Period",
